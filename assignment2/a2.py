@@ -225,6 +225,7 @@ class CommandInterface:
             self.player = 2
         else:
             self.player = 1
+
         return True
     
     def legal(self, args):
@@ -281,13 +282,64 @@ class CommandInterface:
     
     # new function to be implemented for assignment 2
     def solve(self, args):
-        raise NotImplementedError("This command is not yet implemented.")
+        
+        #Boolean Negamax algorithm
+        if self.negamax():
+            print("Player 1 wins")
+        else:
+            print("Player 2 wins")
         return True
     
     #===============================================================================================
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
     #===============================================================================================
     
+    def negamax(self):
+
+        if(len(self.get_legal_moves()) == 0 ): #if in a terminal state
+            return self.statically_evaluate() #returns true if player == 1, false if not
+        
+        legal_moves = self.get_legal_moves()
+
+        for move in legal_moves:
+            self.play(move)
+            print(move,"\n")
+            isWin = not self.negamax()
+            self.undo(move)
+            if isWin:
+                print("True kks")
+                return True
+        print("False kkk")
+        return False
+
+
+    def statically_evaluate(self):
+        if self.player == 1:
+            print("player 1 ran")
+            return True
+        else:
+            print("player 2 ran")
+            return False
+
+    def undo(self, args):
+        err = ""
+        if len(args) != 3:
+            return Exception
+        try:
+            x = int(args[0])
+            y = int(args[1])
+        except ValueError:
+            return False
+        if  x < 0 or x >= len(self.board[0]) or y < 0 or y >= len(self.board):
+            return False
+        
+        self.board[y][x] = None
+        if self.player == 1:
+            self.player = 2
+        else:
+            self.player = 1
+        return True
+
 if __name__ == "__main__":
     interface = CommandInterface()
     interface.main_loop()
