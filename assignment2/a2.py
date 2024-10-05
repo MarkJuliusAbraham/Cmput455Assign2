@@ -282,9 +282,9 @@ class CommandInterface:
     
     # new function to be implemented for assignment 2
     def solve(self, args):
-        
+        depth = 0
         #Boolean Negamax algorithm
-        if self.negamax():
+        if self.negamax(depth):
             print("Player 1 wins")
         else:
             print("Player 2 wins")
@@ -294,32 +294,53 @@ class CommandInterface:
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
     #===============================================================================================
     
-    def negamax(self):
+    # def negamax(self):
 
-        if(len(self.get_legal_moves()) == 0 ): #if in a terminal state
-            return self.statically_evaluate() #returns true if player == 1, false if not
+    #     if(len(self.get_legal_moves()) == 0 ): #if in a terminal state
+    #         return self.statically_evaluate() #returns true if player == 1, false if not
         
-        legal_moves = self.get_legal_moves()
+    #     legal_moves = self.get_legal_moves()
 
-        for move in legal_moves:
+    #     for move in legal_moves:
+    #         print(move,self.player,"\n")
+    #         self.play(move)
+    #         isWin = not self.negamax()
+    #         self.undo(move)
+            
+    #         if isWin:
+    #             print("True kks")
+    #             return True
+    #     print("False kkk")
+    #     return False
+
+    def negamax(self,depth):
+        depth += 1
+        print("DEPTH", depth)
+
+        if(len(self.get_legal_moves()) == 0 ):
+            return self.statically_evaluate()
+        k = self.get_legal_moves()
+        for move in k:
+            print(len(k))
+            print(move,self.player)
             self.play(move)
-            print(move,"\n")
-            isWin = not self.negamax()
+            isWin = not self.negamax(depth) 
             self.undo(move)
+            print("undoing",move,self.player)
+
             if isWin:
                 print("True kks")
                 return True
-        print("False kkk")
+        print("False kks")
         return False
-
 
     def statically_evaluate(self):
         if self.player == 1:
             print("player 1 ran")
-            return True
+            return False
         else:
             print("player 2 ran")
-            return False
+            return True
 
     def undo(self, args):
         err = ""
