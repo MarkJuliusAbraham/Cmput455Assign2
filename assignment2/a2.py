@@ -22,7 +22,9 @@ class CommandInterface:
         }
         self.board = [[None]]
         self.player = 1
-    
+
+        self.default_time = 1
+        self.timelimit_set = False
     #===============================================================================================
     # VVVVVVVVVV START of PREDEFINED FUNCTIONS. DO NOT MODIFY. VVVVVVVVVV
     #===============================================================================================
@@ -266,7 +268,15 @@ class CommandInterface:
     
     # new function to be implemented for assignment 2
     def timelimit(self, args):
-        raise NotImplementedError("This command is not yet implemented.")
+        my_var = args[0]
+        if my_var.isdigit():
+            my_var = int(my_var)
+
+        if isinstance(my_var, int):
+            if(1 <= int(my_var) <= 100):
+                print("OK")
+                self.timelimit_set = True
+                self.default_time = my_var
         return True
     
     # new function to be implemented for assignment 2
