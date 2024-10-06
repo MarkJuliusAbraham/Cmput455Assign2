@@ -22,7 +22,7 @@ class CommandInterface:
         }
         self.board = [[None]]
         self.player = 1
-
+        self.starting_player = None
         self.default_time = 1
         self.timelimit_set = False
     #===============================================================================================
@@ -283,6 +283,7 @@ class CommandInterface:
     # new function to be implemented for assignment 2
     def solve(self, args):
         depth = 0
+        self.starting_player = self.player
         #Boolean Negamax algorithm
         if self.negamax(depth):
             print("Player 1 wins")
@@ -335,12 +336,12 @@ class CommandInterface:
         return False
 
     def statically_evaluate(self):
-        if self.player == 1:
-            print("player 1 ran")
+    
+        if self.starting_player == 1:
             return False
-        else:
-            print("player 2 ran")
+        if self.starting_player == 2:
             return True
+
 
     def undo(self, args):
         err = ""
