@@ -4,7 +4,7 @@
 
 import sys
 import random
-
+import time 
 class CommandInterface:
 
     def __init__(self):
@@ -22,7 +22,10 @@ class CommandInterface:
         }
         self.board = [[None]]
         self.player = 1
-    
+        self.starting_player = None
+        self.default_time = 1
+        self.timelimit_set = False
+        self.current_time = 0
     #===============================================================================================
     # VVVVVVVVVV START of PREDEFINED FUNCTIONS. DO NOT MODIFY. VVVVVVVVVV
     #===============================================================================================
@@ -223,6 +226,7 @@ class CommandInterface:
             self.player = 2
         else:
             self.player = 1
+
         return True
     
     def legal(self, args):
@@ -266,18 +270,100 @@ class CommandInterface:
     
     # new function to be implemented for assignment 2
     def timelimit(self, args):
-        raise NotImplementedError("This command is not yet implemented.")
+        my_var = args[0]
+        if my_var.isdigit():
+            my_var = int(my_var)
+
+        if isinstance(my_var, int):
+            if(1 <= int(my_var) <= 100):
+                self.timelimit_set = True
+                self.default_time = my_var
         return True
     
     # new function to be implemented for assignment 2
     def solve(self, args):
-        raise NotImplementedError("This command is not yet implemented.")
+        depth = 0
+        self.starting_player = self.player
+        #Boolean Negamax algorithm
+        self.time_exceeded = False
+        self.start_time = time.time()
+        if self.negamax(depth):
+            if self.time_exceeded == True:
+                return True
+            print("1")
+        else:
+            print("2")
         return True
     
     #===============================================================================================
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
     #===============================================================================================
     
+    # def negamax(self):
+
+    #     if(len(self.get_legal_moves()) == 0 ): #if in a terminal state
+    #         return self.statically_evaluate() #returns true if player == 1, false if not
+        
+    #     legal_moves = self.get_legal_moves()
+
+    #     for move in legal_moves:
+    #         print(move,self.player,"\n")
+    #         self.play(move)
+    #         isWin = not self.negamax()
+    #         self.undo(move)
+            
+    #         if isWin:
+    #             print("True kks")
+    #             return True
+    #     print("False kkk")
+    #     return False
+
+    def negamax(self,depth):
+        current_time = time.time()
+        elasped_time = current_time-self.start_time
+        if elasped_time >= self.default_time:
+            if not self.time_exceeded:
+                print("unknown")  # Time limit reached, returning without solving
+                self.time_exceeded = True
+            return False
+        if(len(self.get_legal_moves()) == 0 ):
+            return self.statically_evaluate()
+        k = self.get_legal_moves()
+        for move in k:
+            self.play(move)
+            isWin = not self.negamax(depth) 
+            self.undo(move)
+            if isWin:
+                return True
+        return False
+
+    def statically_evaluate(self):
+    
+        if self.starting_player == 1:
+            return False
+        if self.starting_player == 2:
+            return True
+
+
+    def undo(self, args):
+        err = ""
+        if len(args) != 3:
+            return Exception
+        try:
+            x = int(args[0])
+            y = int(args[1])
+        except ValueError:
+            return False
+        if  x < 0 or x >= len(self.board[0]) or y < 0 or y >= len(self.board):
+            return False
+        
+        self.board[y][x] = None
+        if self.player == 1:
+            self.player = 2
+        else:
+            self.player = 1
+        return True
+
 if __name__ == "__main__":
     interface = CommandInterface()
     interface.main_loop()
