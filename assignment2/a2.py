@@ -282,10 +282,9 @@ class CommandInterface:
     
     # new function to be implemented for assignment 2
     def solve(self, args):
-        depth = 0
         self.starting_player = self.player
         #Boolean Negamax algorithm
-        if self.negamax(depth):
+        if self.negamax():
             print("Player 1 wins")
         else:
             print("Player 2 wins")
@@ -295,44 +294,17 @@ class CommandInterface:
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
     #===============================================================================================
     
-    # def negamax(self):
-
-    #     if(len(self.get_legal_moves()) == 0 ): #if in a terminal state
-    #         return self.statically_evaluate() #returns true if player == 1, false if not
-        
-    #     legal_moves = self.get_legal_moves()
-
-    #     for move in legal_moves:
-    #         print(move,self.player,"\n")
-    #         self.play(move)
-    #         isWin = not self.negamax()
-    #         self.undo(move)
-            
-    #         if isWin:
-    #             print("True kks")
-    #             return True
-    #     print("False kkk")
-    #     return False
-
-    def negamax(self,depth):
-        depth += 1
-        print("DEPTH", depth)
+    def negamax(self):
 
         if(len(self.get_legal_moves()) == 0 ):
             return self.statically_evaluate()
         k = self.get_legal_moves()
         for move in k:
-            print(len(k))
-            print(move,self.player)
             self.play(move)
-            isWin = not self.negamax(depth) 
+            isWin = not self.negamax() 
             self.undo(move)
-            print("undoing",move,self.player)
-
             if isWin:
-                print("True kks")
                 return True
-        print("False kks")
         return False
 
     def statically_evaluate(self):
@@ -341,7 +313,6 @@ class CommandInterface:
             return False
         if self.starting_player == 2:
             return True
-
 
     def undo(self, args):
         err = ""
