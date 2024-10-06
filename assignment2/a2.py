@@ -25,6 +25,9 @@ class CommandInterface:
         self.starting_player = None
         self.default_time = 1
         self.timelimit_set = False
+
+        self.hashtable = {}
+
     #===============================================================================================
     # VVVVVVVVVV START of PREDEFINED FUNCTIONS. DO NOT MODIFY. VVVVVVVVVV
     #===============================================================================================
@@ -301,11 +304,20 @@ class CommandInterface:
         k = self.get_legal_moves()
         for move in k:
             self.play(move)
-            isWin = not self.negamax() 
+            key = "".join(map(str, self.board))
+            if( key in self.hashtable):
+                isWin = self.hashtable[key]
+            else:
+                isWin = not self.negamax() 
+                self.hashtable[key] = isWin
             self.undo(move)
+            
             if isWin:
                 return True
         return False
+
+    def negamax_hash(self, value):
+        pass
 
     def statically_evaluate(self):
     
