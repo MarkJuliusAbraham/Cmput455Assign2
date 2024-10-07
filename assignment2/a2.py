@@ -4,6 +4,7 @@
 
 import sys
 import random
+import time
 
 class CommandInterface:
 
@@ -25,8 +26,10 @@ class CommandInterface:
         self.starting_player = None
         self.default_time = 1
         self.timelimit_set = False
+        self.winning_move = None
 
         self.hashtable = {}
+        self.current_time = 0
 
     #===============================================================================================
     # VVVVVVVVVV START of PREDEFINED FUNCTIONS. DO NOT MODIFY. VVVVVVVVVV
@@ -278,46 +281,78 @@ class CommandInterface:
 
         if isinstance(my_var, int):
             if(1 <= int(my_var) <= 100):
-                print("OK")
                 self.timelimit_set = True
                 self.default_time = my_var
         return True
-    
     # new function to be implemented for assignment 2
     def solve(self, args):
+        
+        self.hashtable = {}
+
+        depth = 0
         self.starting_player = self.player
         #Boolean Negamax algorithm
-        if self.negamax():
-            print("Player 1 wins")
+        self.time_exceeded = False
+        self.start_time = time.time()
+        if self.negamax(depth):
+            if self.time_exceeded == True:
+                return True
+            print(self.starting_player," ".join(self.winning_move))
         else:
-            print("Player 2 wins")
+            if self.starting_player == 1:
+                print("2")
+            else:
+                print("1")
         return True
-    
+
+
+
+
+
+
     #===============================================================================================
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
     #===============================================================================================
-    
-    def negamax(self):
 
+    def negamax(self,depth):
+        last_move = None
+        current_time = time.time()
+        elasped_time = current_time-self.start_time
+        if elasped_time >= self.default_time:
+            if not self.time_exceeded:
+                print("unknown")  # Time limit reached, returning without solving
+                self.time_exceeded = True
+            return False
         if(len(self.get_legal_moves()) == 0 ):
             return self.statically_evaluate()
         k = self.get_legal_moves()
         for move in k:
             self.play(move)
+            last_move = move
             key = "".join(map(str, self.board))
-            if( key in self.hashtable):
-                isWin = self.hashtable[key]
-            else:
-                isWin = not self.negamax() 
-                self.hashtable[key] = isWin
-            self.undo(move)
-            
-            if isWin:
-                return True
-        return False
 
-    def negamax_hash(self, value):
-        pass
+
+            value = self.lookup_position()
+            if (value != None):
+                isWin = value
+            else:
+                isWin = not self.negamax(depth)
+                self.hashtable[key] = isWin
+
+            # if( key in self.hashtable):
+            #     isWin = self.hashtable[key]
+            # else:
+            #     isWin = not self.negamax(depth) 
+            #     self.hashtable[key] = isWin
+            self.undo(move)
+            if isWin:
+                if depth == 0:
+                    self.winning_move = last_move
+                return True
+        if depth == 0:
+            self.winning_move = last_move
+        return False
+    
 
     def statically_evaluate(self):
     
@@ -325,6 +360,50 @@ class CommandInterface:
             return False
         if self.starting_player == 2:
             return True
+
+    def transpose_and_hash(self, value):
+        
+        for _ in range(2):
+            self.horizontal_flip()
+            key = "".join(map(str, self.board))
+            self.hashtable[key] = value
+            self.vertical_flip()
+            key = "".join(map(str, self.board))
+            self.hashtable[key] = value
+
+    def lookup_position(self):
+        # Try to find the position in the hash table under any symmetry
+        possible_keys = []
+        
+        self.horizontal_flip()
+        possible_keys.append("".join(map(str, self.board)))  # Horizontal
+        self.vertical_flip()
+        possible_keys.append("".join(map(str, self.board)))  # Both flipped
+        self.horizontal_flip()
+        possible_keys.append("".join(map(str, self.board)))  # Vertical
+        self.vertical_flip()
+        possible_keys.append("".join(map(str, self.board)))  # Original
+
+        # Check each possible key in the hashtable
+        for key in possible_keys:
+            if key in self.hashtable:
+                return self.hashtable[key]
+
+        return None
+
+
+    def horizontal_flip(self):
+        for row in self.board:
+            row.reverse()
+        return
+
+    def vertical_flip(self):
+        flipped_array = self.board[::-1]
+        self.board = flipped_array
+        return
+
+
+
 
     def undo(self, args):
         err = ""
