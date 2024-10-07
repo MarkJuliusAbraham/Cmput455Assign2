@@ -26,6 +26,7 @@ class CommandInterface:
         self.default_time = 1
         self.timelimit_set = False
         self.current_time = 0
+        self.transposition_table = {}  # Transposition table to store board states and results
     #===============================================================================================
     # VVVVVVVVVV START of PREDEFINED FUNCTIONS. DO NOT MODIFY. VVVVVVVVVV
     #===============================================================================================
@@ -253,11 +254,11 @@ class CommandInterface:
         if len(moves) == 0:
             print("resign")
         else:
-            rand_move = moves[random.randint(0, len(moves)-1)]
+            rand_move = moves[random.randint(0, len(moves) - 1)]
             self.play(rand_move)
-            print(" ".join(rand_move))
+            print(" ".join(map(str, rand_move)))  # Convert each part of rand_move to string
         return True
-    
+
     def winner(self, args):
         if len(self.get_legal_moves()) == 0:
             if self.player == 1:
@@ -282,87 +283,103 @@ class CommandInterface:
     
     # new function to be implemented for assignment 2
     def solve(self, args):
-        depth = 0
         self.starting_player = self.player
-        #Boolean Negamax algorithm
         self.time_exceeded = False
-        self.start_time = time.time()
-        if self.negamax(depth):
-            if self.time_exceeded == True:
-                return True
-            print("1")
+        self.start_time = time.time()  # Start the timer
+        best_move = None
+        self.transposition_table.clear()  # Reset the transposition table at each solve
+
+        # Call the negamax function with alpha and beta initialized to -inf and +inf
+        result = self.negamax(0, float('-inf'), float('inf'))
+
+        if not self.time_exceeded:
+            if result == 1:
+                # Iterate through legal moves to find the specific best move
+                for move in self.get_legal_moves():
+                    self.play(move)
+                    if -self.negamax(0, float('-inf'), float('inf')) == 1:
+                        best_move = move
+                    self.undo(move)
+
+                if best_move:
+                    print(f"{self.player} {str(best_move[0])} {str(best_move[1])} {str(best_move[2])}")
+                else:
+                    print(str(self.player))  # Winner, but no specific move to suggest
+            else:
+                print(str(3 - self.player))
         else:
-            print("2")
+            print("unknown")
+        print("Transposition table size:", len(self.transposition_table))  # Optional for debugging
         return True
-    
+
     #===============================================================================================
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
     #===============================================================================================
-    
-    # def negamax(self):
 
-    #     if(len(self.get_legal_moves()) == 0 ): #if in a terminal state
-    #         return self.statically_evaluate() #returns true if player == 1, false if not
-        
-    #     legal_moves = self.get_legal_moves()
 
-    #     for move in legal_moves:
-    #         print(move,self.player,"\n")
-    #         self.play(move)
-    #         isWin = not self.negamax()
-    #         self.undo(move)
-            
-    #         if isWin:
-    #             print("True kks")
-    #             return True
-    #     print("False kkk")
-    #     return False
+    def negamax(self, depth, alpha, beta):
+        # Check for time limit
+        if time.time() - self.start_time >= self.default_time:
+            self.time_exceeded = True
+            return 0  # Return a neutral value when time exceeds
 
-    def negamax(self,depth):
-        current_time = time.time()
-        elasped_time = current_time-self.start_time
-        if elasped_time >= self.default_time:
-            if not self.time_exceeded:
-                print("unknown")  # Time limit reached, returning without solving
-                self.time_exceeded = True
-            return False
-        if(len(self.get_legal_moves()) == 0 ):
+        # Check for cached result
+        board_hash = self.hash_board()
+        if board_hash in self.transposition_table:
+            return self.transposition_table[board_hash]  # Return stored evaluation
+
+        if not self.get_legal_moves():
             return self.statically_evaluate()
-        k = self.get_legal_moves()
-        for move in k:
+
+        max_eval = float('-inf')
+
+        # Iterate over all possible moves
+        for move in self.get_legal_moves():
             self.play(move)
-            isWin = not self.negamax(depth) 
+            eval = -self.negamax(depth + 1, -beta, -alpha)  # Recursive call with negation for opponent's turn
             self.undo(move)
-            if isWin:
-                return True
-        return False
+
+            # Alpha-beta pruning
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if alpha >= beta:
+                break  # Cut-off
+
+        # Store the computed evaluation for this board state in the transposition table
+        self.transposition_table[board_hash] = max_eval
+        return max_eval
 
     def statically_evaluate(self):
-    
-        if self.starting_player == 1:
-            return False
-        if self.starting_player == 2:
-            return True
+        # Simply return 1 if the starting player wins, -1 if the starting player loses
+        if self.starting_player == self.player:
+            return -1  # Losing for the starting player
+        return 1  # Winning for the starting player
 
-
-    def undo(self, args):
-        err = ""
-        if len(args) != 3:
-            return Exception
-        try:
-            x = int(args[0])
-            y = int(args[1])
-        except ValueError:
-            return False
-        if  x < 0 or x >= len(self.board[0]) or y < 0 or y >= len(self.board):
-            return False
-        
+    def undo(self, move):
+        x, y, num = map(int, move)
         self.board[y][x] = None
-        if self.player == 1:
-            self.player = 2
-        else:
-            self.player = 1
-        return True
+        self.player = 3 - self.player  # Switch back to the other player
+
+    def hash_board(self):
+        return tuple(tuple(row) for row in self.board)
+
+    def get_symmetric_moves(self, move):
+        """Generate symmetrical moves to counter opponent's moves."""
+        n, m = len(self.board[0]), len(self.board)
+        x, y, num = map(int, move)
+
+        # Assuming symmetry across the center lines (vertical, horizontal)
+        symmetrical_moves = []
+        if n > 1:
+            symmetrical_moves.append((n - 1 - x, y, num))  # Mirror across vertical center
+        if m > 1:
+            symmetrical_moves.append((x, m - 1 - y, num))  # Mirror across horizontal center
+        if n > 1 and m > 1:
+            symmetrical_moves.append((n - 1 - x, m - 1 - y, num))  # Mirror across both axes
+
+        # Filter out any moves that are already occupied or invalid
+        return [move for move in symmetrical_moves if self.is_legal(move[0], move[1], move[2])]
+
 
 if __name__ == "__main__":
     interface = CommandInterface()
