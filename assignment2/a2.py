@@ -287,29 +287,33 @@ class CommandInterface:
         self.time_exceeded = False
         self.start_time = time.time()  # Start the timer
         best_move = None
-        self.transposition_table.clear()  # Reset the transposition table at each solve
 
         # Call the negamax function with alpha and beta initialized to -inf and +inf
         result = self.negamax(0, float('-inf'), float('inf'))
 
         if not self.time_exceeded:
+            # If negamax found a winning strategy for the current player
             if result == 1:
                 # Iterate through legal moves to find the specific best move
                 for move in self.get_legal_moves():
                     self.play(move)
+                    # Check if this move leads to a win
                     if -self.negamax(0, float('-inf'), float('inf')) == 1:
                         best_move = move
                     self.undo(move)
 
+                # Output the result with the best move if found
                 if best_move:
                     print(f"{self.player} {str(best_move[0])} {str(best_move[1])} {str(best_move[2])}")
                 else:
                     print(str(self.player))  # Winner, but no specific move to suggest
             else:
+                # No winning strategy for current player, opponent would win
                 print(str(3 - self.player))
         else:
+            # If the time limit was exceeded, print "unknown"
             print("unknown")
-        print("Transposition table size:", len(self.transposition_table))  # Optional for debugging
+
         return True
 
     #===============================================================================================
