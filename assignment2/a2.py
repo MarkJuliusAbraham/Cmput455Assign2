@@ -378,26 +378,20 @@ class CommandInterface:
             return False
         if(len(self.get_legal_moves()) == 0 ):
             return self.statically_evaluate()
+        
+
+
         k = self.get_legal_moves()
         for move in k:
             self.play(move)
             last_move = move
             key = "".join(map(str, self.board))
 
-
-            value = self.lookup_position()
-            if (value != None):
-                isWin = value
+            if( key in self.hashtable):
+                isWin = self.hashtable[key]
             else:
-                isWin = not self.negamax(depth)
-                self.hashtable[key] = isWin
-
-            # if( key in self.hashtable):
-            #     isWin = self.hashtable[key]
-            # else:
-            #     isWin = not self.negamax(depth) 
-            #     self.hashtable[key] = isWin
-            
+                isWin = not self.negamax(depth) 
+                self.transpose_and_hash(isWin)
             self.undo(move)
             if isWin:
                 if depth == 0:
