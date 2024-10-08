@@ -390,8 +390,12 @@ class CommandInterface:
             if( key in self.hashtable):
                 isWin = self.hashtable[key]
             else:
-                isWin = not self.negamax(depth) 
-                self.transpose_and_hash(isWin)
+                isWin = not self.negamax(depth+1) 
+                # self.transpose_and_hash(isWin)
+                if depth >= 15:
+                    self.transpose_and_hash(isWin)
+                else:
+                    self.hashtable[key]=isWin 
             self.undo(move)
             if isWin:
                 if depth == 0:
