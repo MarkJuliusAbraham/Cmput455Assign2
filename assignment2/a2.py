@@ -407,11 +407,8 @@ class CommandInterface:
 
         return not is_losing_position  # Return True if the current player has a winning move
     def statically_evaluate(self):
-    
-        if self.starting_player == 1:
-            return False
-        if self.starting_player == 2:
-            return True
+        return False
+        #11
 
     def transpose_and_hash(self, value):
         
