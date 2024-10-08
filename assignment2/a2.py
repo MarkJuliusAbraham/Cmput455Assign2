@@ -367,45 +367,45 @@ class CommandInterface:
     #             return True
 
     #     return False
-    def negamax(self, depth):
+    def negamax(self,depth):
+        last_move = None
         current_time = time.time()
-        elapsed_time = current_time - self.start_time
-
-        # Enforce the time limit strictly
-        if elapsed_time >= self.default_time:
+        elasped_time = current_time-self.start_time
+        if elasped_time >= self.default_time:
             if not self.time_exceeded:
-                print("unknown")  # Only print "unknown" if the time is truly exceeded
+                print("unknown")  # Time limit reached, returning without solving
                 self.time_exceeded = True
-            return False  # Stop recursion due to time being exceeded
-
-        # Base case: If no legal moves remain, evaluate the board statically
-        if len(self.get_legal_moves()) == 0:
+            return False
+        if(len(self.get_legal_moves()) == 0 ):
             return self.statically_evaluate()
-
-        # Assume the current position is a loss for the current player
-        is_losing_position = True
-
-        for move in self.get_legal_moves():
+        k = self.get_legal_moves()
+        for move in k:
             self.play(move)
-            key = "".join(map(str, self.board))  # Generate a unique board key for lookup
+            last_move = move
+            key = "".join(map(str, self.board))
 
-            # Lookup position in the hashtable to avoid recalculating positions
-            if key in self.hashtable:
-                result = self.hashtable[key]
+
+            value = self.lookup_position()
+            if (value != None):
+                isWin = value
             else:
-                result = not self.negamax(depth + 1)  # Recursive negamax for the opponent
-                self.hashtable[key] = result  # Store result in hashtable
+                isWin = not self.negamax(depth)
+                self.hashtable[key] = isWin
 
-            self.undo(move)  # Undo the move after checking it
-
-            # If this move forces a win, set it as a winning position
-            if result:
-                is_losing_position = False
+            # if( key in self.hashtable):
+            #     isWin = self.hashtable[key]
+            # else:
+            #     isWin = not self.negamax(depth) 
+            #     self.hashtable[key] = isWin
+            
+            self.undo(move)
+            if isWin:
                 if depth == 0:
-                    self.winning_move = move  # Store the winning move at root depth
-                break  # No need to check further if a winning move is found
-
-        return not is_losing_position  # Return True if the current player has a winning move
+                    self.winning_move = last_move
+                return True
+        if depth == 0:
+            self.winning_move = last_move
+        return False
     def statically_evaluate(self):
         return False
         #11
