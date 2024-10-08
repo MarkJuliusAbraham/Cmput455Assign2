@@ -294,6 +294,7 @@ class CommandInterface:
         #Boolean Negamax algorithm
         self.time_exceeded = False
         self.start_time = time.time()
+
         if self.negamax(depth):
             if self.time_exceeded == True:
                 return True
@@ -303,12 +304,6 @@ class CommandInterface:
                 print("2")
             else:
                 print("1")
-        return True
-
-
-
-
-
 
     #===============================================================================================
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
@@ -344,6 +339,7 @@ class CommandInterface:
             # else:
             #     isWin = not self.negamax(depth) 
             #     self.hashtable[key] = isWin
+            
             self.undo(move)
             if isWin:
                 if depth == 0:
@@ -356,10 +352,7 @@ class CommandInterface:
 
     def statically_evaluate(self):
     
-        if self.starting_player == 1:
-            return False
-        if self.starting_player == 2:
-            return True
+        return False
 
     def transpose_and_hash(self, value):
         
