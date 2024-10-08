@@ -4,7 +4,8 @@
 
 import sys
 import random
-import time 
+import time
+
 class CommandInterface:
 
     def __init__(self):
@@ -25,7 +26,11 @@ class CommandInterface:
         self.starting_player = None
         self.default_time = 1
         self.timelimit_set = False
+        self.winning_move = None
+
+        self.hashtable = {}
         self.current_time = 0
+
     #===============================================================================================
     # VVVVVVVVVV START of PREDEFINED FUNCTIONS. DO NOT MODIFY. VVVVVVVVVV
     #===============================================================================================
@@ -279,70 +284,181 @@ class CommandInterface:
                 self.timelimit_set = True
                 self.default_time = my_var
         return True
-    
     # new function to be implemented for assignment 2
+    # def solve(self, args):
+        
+    #     self.hashtable = {}
+    #     depth = 0
+    #     self.starting_player = self.player
+    #     self.time_exceeded = False
+    #     self.start_time = time.time()  # Start the timer for solving
+
+    #     if self.negamax(depth):
+    #         if self.time_exceeded:
+    #             return True  # Stop if time exceeded
+    #         print(f"{self.starting_player} {' '.join(map(str, self.winning_move))}")  # Display winning move
+    #     else:
+    #         # If no solution found, print the opposite player as the winner
+    #         print("2" if self.starting_player == 1 else "1")
+    #     return True
     def solve(self, args):
+        self.hashtable = {}
         depth = 0
         self.starting_player = self.player
-        #Boolean Negamax algorithm
         self.time_exceeded = False
-        self.start_time = time.time()
+        self.start_time = time.time()  # Start the timer
+
         if self.negamax(depth):
-            if self.time_exceeded == True:
-                return True
-            print("1")
+            if self.time_exceeded:
+                return True  # If time limit was exceeded, return early
+            # Print the winning move in the correct format
+            print(self.starting_player, " ".join(map(str, self.winning_move)))
         else:
-            print("2")
+            # Output the correct result if no solution was found
+            if self.starting_player == 1:
+                print("2")
+            else:
+                print("1")
         return True
-    
+
+
+
+
+
+
     #===============================================================================================
     # ɅɅɅɅɅɅɅɅɅɅ END OF ASSIGNMENT 2 FUNCTIONS. ɅɅɅɅɅɅɅɅɅɅ
     #===============================================================================================
-    
-    # def negamax(self):
 
-    #     if(len(self.get_legal_moves()) == 0 ): #if in a terminal state
-    #         return self.statically_evaluate() #returns true if player == 1, false if not
-        
-    #     legal_moves = self.get_legal_moves()
+    # def negamax(self,depth):
+    #     last_move = None
+    #     current_time = time.time()
+    #     elapsed_time = current_time - self.start_time  # Corrected the typo
 
-    #     for move in legal_moves:
-    #         print(move,self.player,"\n")
+    #     # Enforce the time limit
+    #     if elapsed_time >= self.default_time:
+    #         if not self.time_exceeded:
+    #             print("unknown")  # Time limit reached
+    #             self.time_exceeded = True
+    #         return False  # Stop further recursion when time is exceeded
+
+    #     if len(self.get_legal_moves()) == 0:
+    #         return self.statically_evaluate()
+
+    #     moves = self.get_legal_moves()  # Get legal moves
+    #     for move in moves:
     #         self.play(move)
-    #         isWin = not self.negamax()
-    #         self.undo(move)
-            
+    #         last_move = move  # Track the last move
+    #         key = "".join(map(str, self.board))  # Generate board key for hashtable lookup
+
+    #         value = self.lookup_position()
+    #         if value is not None:
+    #             isWin = value
+    #         else:
+    #             isWin = not self.negamax(depth + 1)  # Recursive negamax call
+    #             self.hashtable[key] = isWin
+
+    #         self.undo(move)  # Undo the move
+
+    #         # If we find a winning move
     #         if isWin:
-    #             print("True kks")
+    #             if depth == 0:
+    #                 self.winning_move = move  # Store winning move at root depth
     #             return True
-    #     print("False kkk")
+
     #     return False
-
-    def negamax(self,depth):
+    def negamax(self, depth):
         current_time = time.time()
-        elasped_time = current_time-self.start_time
-        if elasped_time >= self.default_time:
-            if not self.time_exceeded:
-                print("unknown")  # Time limit reached, returning without solving
-                self.time_exceeded = True
-            return False
-        if(len(self.get_legal_moves()) == 0 ):
-            return self.statically_evaluate()
-        k = self.get_legal_moves()
-        for move in k:
-            self.play(move)
-            isWin = not self.negamax(depth) 
-            self.undo(move)
-            if isWin:
-                return True
-        return False
+        elapsed_time = current_time - self.start_time
 
+        # Enforce the time limit strictly
+        if elapsed_time >= self.default_time:
+            if not self.time_exceeded:
+                print("unknown")  # Only print "unknown" if the time is truly exceeded
+                self.time_exceeded = True
+            return False  # Stop recursion due to time being exceeded
+
+        # Base case: If no legal moves remain, evaluate the board statically
+        if len(self.get_legal_moves()) == 0:
+            return self.statically_evaluate()
+
+        # Assume the current position is a loss for the current player
+        is_losing_position = True
+
+        for move in self.get_legal_moves():
+            self.play(move)
+            key = "".join(map(str, self.board))  # Generate a unique board key for lookup
+
+            # Lookup position in the hashtable to avoid recalculating positions
+            if key in self.hashtable:
+                result = self.hashtable[key]
+            else:
+                result = not self.negamax(depth + 1)  # Recursive negamax for the opponent
+                self.hashtable[key] = result  # Store result in hashtable
+
+            self.undo(move)  # Undo the move after checking it
+
+            # If this move forces a win, set it as a winning position
+            if result:
+                is_losing_position = False
+                if depth == 0:
+                    self.winning_move = move  # Store the winning move at root depth
+                break  # No need to check further if a winning move is found
+
+        return not is_losing_position  # Return True if the current player has a winning move
     def statically_evaluate(self):
     
         if self.starting_player == 1:
             return False
         if self.starting_player == 2:
             return True
+
+    def transpose_and_hash(self, value):
+        
+        for _ in range(2):
+            self.horizontal_flip()
+            key = "".join(map(str, self.board))
+            self.hashtable[key] = value
+            self.vertical_flip()
+            key = "".join(map(str, self.board))
+            self.hashtable[key] = value
+
+    def lookup_position(self):
+        # Generate keys for the hashtable with various board symmetries
+        possible_keys = ["".join(map(str, self.board))]  # Store original board key
+
+        # Apply transformations and add corresponding keys
+        self.horizontal_flip()
+        possible_keys.append("".join(map(str, self.board)))  # Horizontal flip
+
+        self.vertical_flip()
+        possible_keys.append("".join(map(str, self.board)))  # Both horizontal and vertical flips
+
+        self.horizontal_flip()
+        possible_keys.append("".join(map(str, self.board)))  # Vertical flip only
+
+        # Restore original board state by undoing the transformations
+        self.vertical_flip()  # Undo vertical flip to get back to original state
+
+        # Check all the possible keys in the hashtable
+        for key in possible_keys:
+            if key in self.hashtable:
+                return self.hashtable[key]
+
+        return None
+
+
+    def horizontal_flip(self):
+        for row in self.board:
+            row.reverse()
+        return
+
+    def vertical_flip(self):
+        flipped_array = self.board[::-1]
+        self.board = flipped_array
+        return
+
+
 
 
     def undo(self, args):
